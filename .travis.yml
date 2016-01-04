@@ -6,3 +6,11 @@ cache:
     - $HOME/.m2
 notifications:
   email: false
+deploy:
+  provider: releases
+  api_key:
+    secure: KGgC/c9zhEdu4GBVVa1RXhVK51ucaHbU8oIEnUMaDlKaCTKnae7MQV1Mii4GjWHb3dzH7iatmU1vABdjSDbk/AwNYJuZIViwSCbHk1x5D5Ws2qG/lv1haVIsVZJxBQb6byAOglOl93Q1SyCwvyxBydBtrlT6i4R3KwpjmqDZe0BJxgrtTj4O9pvOsroLYdOhwOJ8sPAjHMhDtQm2MBkQgL5fW5o8ZcUCkHTv7WkAnN9EPjr6C8aVbOenMy8dOEIum6kz7Cm/2PgUmCO1t6qiEzzmmuzcxBbvfAPPxSdm3krQY64+zLH8NQCwnn3GnEuUAXkj6XU+H08436Jz3hNOWluHTXeI9TVmxFGxyXvpLziXqEmPHmeESgC2g29v1ystaGpfGjDNML7cIHe5GoTViZ7ifx4DYGH7Wd3vF0g1MZzrz3RueLW+dSeIvWEjf43lqXNQCo4yyrev3FkbkwGsbdrOVtCwxhtqWM9RvWiNKgXf5Wx8nX4IZV9uOvjiIB9Pu2dRdEPagO9S2L5COQ2B6Da0qQD8X4+KjAj8/4R/GSW2TaXjl4AvjaOLEMzM9I9YYKSr7KW3ImkOUcrITbbsg6q+hz2GAOHlq3qCKh5KAKQ9ZOM1i26KSyyh/OBS1hR8z0TYiGHjJ47Ja0AQC5DBTpRf1ijFpmQaJiw1k6FDrdU=
+  file: target/TimTheEnchanter.jar
+  skip-cleanup: true
+  on:
+    tags: true
