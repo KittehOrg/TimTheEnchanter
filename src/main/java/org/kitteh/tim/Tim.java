@@ -57,7 +57,7 @@ import java.util.stream.Collector;
 /**
  * I... am an enchanter.
  */
-@Plugin(id = "Tim", name = "Tim the Enchanter", version = "4.0.0-SNAPSHOT")
+@Plugin(id = "Tim", name = "Tim the Enchanter", version = "4.0.0")
 public class Tim {
     public static final String COMMAND_ARG_ENCHANTMENT = "enchantment";
     public static final String COMMAND_ARG_LEVEL = "level";
