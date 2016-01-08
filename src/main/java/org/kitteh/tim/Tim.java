@@ -23,6 +23,8 @@
  */
 package org.kitteh.tim;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
@@ -37,47 +39,32 @@ import org.spongepowered.api.data.meta.ItemEnchantment;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
+import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
 import org.spongepowered.api.item.Enchantment;
-import org.spongepowered.api.item.Enchantments;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.format.TextColors;
 
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.function.Function;
+import java.util.stream.Collector;
 
 /**
  * I... am an enchanter.
  */
 @Plugin(id = "Tim", name = "Tim the Enchanter", version = "4.0.0-SNAPSHOT")
 public class Tim {
-    public static final Map<String, Enchantment> ENCHANTMENTS = Collections.unmodifiableMap(Arrays.stream(Enchantments.class.getFields())
-            .filter(field -> field.getType() == Enchantment.class)
-            .filter(field -> Modifier.isStatic(field.getModifiers()))
-            .map(field -> {
-                try {
-                    return (Enchantment) field.get(null);
-                } catch (Exception e) {
-                    throw new AssertionError("Java is dum");
-                }
-            }).collect(Collectors.toMap(enchantment -> {
-                int i = enchantment.getName().indexOf(".") + 1;
-                return enchantment.getName().substring(i > 0 && i < enchantment.getName().length() ? i : 0);
-            }, e -> e)));
-
     public static final String COMMAND_ARG_ENCHANTMENT = "enchantment";
     public static final String COMMAND_ARG_LEVEL = "level";
 
     public static final String PERMISSION_ENCHANT = "enchanter.enchant";
 
-    public static final List<String> QUOTES = Collections.unmodifiableList(Arrays.asList(
+    public static final List<String> QUOTES = ImmutableList.of(
             "Behold the cave of Caerbannog!",
             "That's no ordinary rabbit.\n" +
                     "That's the most foul, cruel,\n" +
@@ -89,9 +76,11 @@ public class Tim {
                     "listen to me? Oh no, you know, didn't you?\n" +
                     "It's just a harmless little bunny, isn't it?\n" +
                     "Well it's always the same, I always tell them ...\n" +
-                    "do they listen to me?"));
+                    "do they listen to me?"
+    );
 
     private int quoteCount = 0;
+    private Map<String, Enchantment> enchantments;
 
     @Inject
     private Game game;
@@ -106,11 +95,23 @@ public class Tim {
                 .executor(this::commandEnchantAll).build();
         CommandSpec enchantCommandSpec = CommandSpec.builder()
                 .permission(PERMISSION_ENCHANT)
-                .arguments(GenericArguments.choices(Text.of(COMMAND_ARG_ENCHANTMENT), ENCHANTMENTS), GenericArguments.optional(GenericArguments.string(Text.of(COMMAND_ARG_LEVEL))))
+                .arguments(GenericArguments.choices(Text.of(COMMAND_ARG_ENCHANTMENT), this.enchantments), GenericArguments.optional(GenericArguments.string(Text.of(COMMAND_ARG_LEVEL))))
                 .child(enchantAllCommandSpec, "all")
                 .executor(this::commandEnchant).build();
         this.game.getCommandManager().register(this, enchantCommandSpec, "enchant");
         this.logger.info("There are some who call me... Tim?");
+    }
+
+    @Listener
+    public void onGameStarting(GamePostInitializationEvent event) {
+        Function<ImmutableMap.Builder<String, Enchantment>, ImmutableMap<String, Enchantment>> finisher = ImmutableMap.Builder::build; // Compiler doesn't seem to like putting this in the collector.
+        this.enchantments = Collections.unmodifiableMap(
+                this.game.getRegistry().getAllOf(Enchantment.class).stream()
+                        .collect(Collector.of(
+                                ImmutableMap.Builder::new,
+                                (builder, enchantment) -> builder.put(enchantment.getName(), enchantment),
+                                (left, right) -> left.putAll(right.build()),
+                                finisher)));
     }
 
     private CommandResult commandEnchant(CommandSource commandSource, CommandContext commandContext) throws CommandException {
@@ -123,7 +124,7 @@ public class Tim {
     private CommandResult commandEnchantAll(CommandSource commandSource, CommandContext commandContext) throws CommandException {
         Player player = this.getPlayer(commandSource);
         int level = this.getEnchantmentLevel(commandContext);
-        for (Enchantment enchantment : ENCHANTMENTS.values()) {
+        for (Enchantment enchantment : this.enchantments.values()) {
             this.enchant(player, enchantment, getLevelForEnchantment(enchantment, level));
         }
         return this.getSuccess(commandSource);
