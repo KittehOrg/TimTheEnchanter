@@ -38,8 +38,8 @@ import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.meta.ItemEnchantment;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
+import org.spongepowered.api.event.game.state.GameStartingServerEvent;
 import org.spongepowered.api.item.Enchantment;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.plugin.Plugin;
@@ -89,7 +89,19 @@ public class Tim {
     private Logger logger;
 
     @Listener
-    public void onGameInit(GameInitializationEvent event) {
+    public void onGameStarting(GamePostInitializationEvent event) {
+        Function<ImmutableMap.Builder<String, Enchantment>, ImmutableMap<String, Enchantment>> finisher = ImmutableMap.Builder::build; // Compiler doesn't seem to like putting this in the collector.
+        this.enchantments = Collections.unmodifiableMap(
+                this.game.getRegistry().getAllOf(Enchantment.class).stream()
+                        .collect(Collector.of(
+                                ImmutableMap.Builder::new,
+                                (builder, enchantment) -> builder.put(enchantment.getName(), enchantment),
+                                (left, right) -> left.putAll(right.build()),
+                                finisher)));
+    }
+
+    @Listener
+    public void onGameServerStarting(GameStartingServerEvent event) {
         CommandSpec enchantAllCommandSpec = CommandSpec.builder()
                 .arguments(GenericArguments.optional(GenericArguments.string(Text.of(COMMAND_ARG_LEVEL))))
                 .executor(this::commandEnchantAll).build();
@@ -100,18 +112,6 @@ public class Tim {
                 .executor(this::commandEnchant).build();
         this.game.getCommandManager().register(this, enchantCommandSpec, "enchant");
         this.logger.info("There are some who call me... Tim?");
-    }
-
-    @Listener
-    public void onGameStarting(GamePostInitializationEvent event) {
-        Function<ImmutableMap.Builder<String, Enchantment>, ImmutableMap<String, Enchantment>> finisher = ImmutableMap.Builder::build; // Compiler doesn't seem to like putting this in the collector.
-        this.enchantments = Collections.unmodifiableMap(
-                this.game.getRegistry().getAllOf(Enchantment.class).stream()
-                        .collect(Collector.of(
-                                ImmutableMap.Builder::new,
-                                (builder, enchantment) -> builder.put(enchantment.getName(), enchantment),
-                                (left, right) -> left.putAll(right.build()),
-                                finisher)));
     }
 
     private CommandResult commandEnchant(CommandSource commandSource, CommandContext commandContext) throws CommandException {
