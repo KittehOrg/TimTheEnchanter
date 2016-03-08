@@ -8,7 +8,7 @@
     <artifactId>tim</artifactId>
 
     <name>Tim the Enchanter</name>
-    <version>4.0.0</version>
+    <version>4.0.1</version>
 
     <url>http://kitteh.org/</url>
     <properties>
@@ -69,7 +69,7 @@
         <dependency>
             <groupId>org.spongepowered</groupId>
             <artifactId>spongeapi</artifactId>
-            <version>3.0.0</version>
+            <version>4.0.0</version>
             <type>jar</type>
             <optional>true</optional>
             <scope>provided</scope>
