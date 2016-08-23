@@ -36,6 +36,7 @@ import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.meta.ItemEnchantment;
+import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
@@ -160,14 +161,14 @@ public class Tim {
     }
 
     private void enchant(Player player, Enchantment enchantment, int level) throws CommandException {
-        ItemStack item = player.getItemInHand().orElseThrow(() -> new CommandException(this.getErrorText("You need to be holding an item to enchant it!")));
+        ItemStack item = player.getItemInHand(HandTypes.MAIN_HAND).orElseThrow(() -> new CommandException(this.getErrorText("You need to be holding an item to enchant it!")));
         item.transform(Keys.ITEM_ENCHANTMENTS, list -> {
             List<ItemEnchantment> newList = new LinkedList<>();
             list.stream().filter(ench -> ench.getEnchantment() != enchantment).forEach(newList::add);
             newList.add(new ItemEnchantment(enchantment, level));
             return newList;
         });
-        player.setItemInHand(item);
+        player.setItemInHand(HandTypes.MAIN_HAND, item);
     }
 
     private Text getErrorText(String error) {
