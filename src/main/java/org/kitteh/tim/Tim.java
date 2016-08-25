@@ -141,6 +141,8 @@ public class Tim {
                 level = Integer.parseInt(levelString);
                 if (level < 1) {
                     throw new CommandException(this.getErrorText("Enchantment level has to be greater than 0"));
+                } else if (level > Short.MAX_VALUE) {
+                    throw new CommandException(this.getErrorText("Enchantment level can't be higher than " + Short.MAX_VALUE));
                 }
                 return level;
             } catch (NumberFormatException e) {
@@ -164,7 +166,9 @@ public class Tim {
         ItemStack item = player.getItemInHand(HandTypes.MAIN_HAND).orElseThrow(() -> new CommandException(this.getErrorText("You need to be holding an item to enchant it!")));
         item.transform(Keys.ITEM_ENCHANTMENTS, list -> {
             List<ItemEnchantment> newList = new LinkedList<>();
-            list.stream().filter(ench -> ench.getEnchantment() != enchantment).forEach(newList::add);
+            if (list != null) {
+                list.stream().filter(ench -> ench.getEnchantment() != enchantment).forEach(newList::add);
+            }
             newList.add(new ItemEnchantment(enchantment, level));
             return newList;
         });
