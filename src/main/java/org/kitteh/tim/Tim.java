@@ -55,12 +55,12 @@ import java.util.List;
 @Plugin(id = "tim", name = "Tim the Enchanter", version = "4.1.0-for-7.0")
 public final class Tim {
 
-    private static final String COMMAND_ARG_ENCHANTMENT = "enchantment";
-    private static final String COMMAND_ARG_LEVEL = "level";
+    public static final String COMMAND_ARG_ENCHANTMENT = "enchantment";
+    public static final String COMMAND_ARG_LEVEL = "level";
 
-    private static final String PERMISSION_ENCHANT = "enchanter.enchant";
+    public static final String PERMISSION_ENCHANT = "enchanter.enchant";
 
-    private static final List<String> QUOTES = ImmutableList.of(
+    public static final List<String> QUOTES = ImmutableList.of(
             "Behold the cave of Caerbannog!",
             "That's no ordinary rabbit.\n" +
                     "That's the most foul, cruel,\n" +
@@ -93,7 +93,7 @@ public final class Tim {
                 .arguments(GenericArguments.catalogedElement(Text.of(COMMAND_ARG_ENCHANTMENT), EnchantmentType.class), GenericArguments.optional(GenericArguments.string(Text.of(COMMAND_ARG_LEVEL))))
                 .child(enchantAllCommandSpec, "all")
                 .executor(this::commandEnchant).build();
-        this.game.getCommandManager().register(this, enchantCommandSpec, "enchant");
+        this.game.getCommandManager().register(this, enchantCommandSpec, "enchant", "tim");
         this.logger.info("There are some who call me... Tim?");
     }
 
