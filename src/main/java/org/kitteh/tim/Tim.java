@@ -24,7 +24,6 @@
 package org.kitteh.tim;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
@@ -35,31 +34,27 @@ import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.data.meta.ItemEnchantment;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartingServerEvent;
-import org.spongepowered.api.item.Enchantment;
+import org.spongepowered.api.item.enchantment.Enchantment;
+import org.spongepowered.api.item.enchantment.EnchantmentType;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.format.TextColors;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collector;
 
 /**
  * I... am an enchanter.
  */
-@Plugin(id = "tim", name = "Tim the Enchanter", version = "4.0.3-for-5.0")
-public class Tim {
+@Plugin(id = "tim", name = "Tim the Enchanter", version = "4.1.0-for-7.0")
+public final class Tim {
+
     public static final String COMMAND_ARG_ENCHANTMENT = "enchantment";
     public static final String COMMAND_ARG_LEVEL = "level";
 
@@ -81,7 +76,6 @@ public class Tim {
     );
 
     private int quoteCount = 0;
-    private Map<String, Enchantment> enchantments;
 
     @Inject
     private Game game;
@@ -90,33 +84,21 @@ public class Tim {
     private Logger logger;
 
     @Listener
-    public void onGameStarting(GamePostInitializationEvent event) {
-        Function<ImmutableMap.Builder<String, Enchantment>, ImmutableMap<String, Enchantment>> finisher = ImmutableMap.Builder::build; // Compiler doesn't seem to like putting this in the collector.
-        this.enchantments = Collections.unmodifiableMap(
-                this.game.getRegistry().getAllOf(Enchantment.class).stream()
-                        .collect(Collector.of(
-                                ImmutableMap.Builder::new,
-                                (builder, enchantment) -> builder.put(enchantment.getName(), enchantment),
-                                (left, right) -> left.putAll(right.build()),
-                                finisher)));
-    }
-
-    @Listener
-    public void onGameServerStarting(GameStartingServerEvent event) {
+    public void onGameServerStarting(final GameStartingServerEvent event) {
         CommandSpec enchantAllCommandSpec = CommandSpec.builder()
                 .arguments(GenericArguments.optional(GenericArguments.string(Text.of(COMMAND_ARG_LEVEL))))
                 .executor(this::commandEnchantAll).build();
         CommandSpec enchantCommandSpec = CommandSpec.builder()
                 .permission(PERMISSION_ENCHANT)
-                .arguments(GenericArguments.choices(Text.of(COMMAND_ARG_ENCHANTMENT), this.enchantments), GenericArguments.optional(GenericArguments.string(Text.of(COMMAND_ARG_LEVEL))))
+                .arguments(GenericArguments.catalogedElement(Text.of(COMMAND_ARG_ENCHANTMENT), EnchantmentType.class), GenericArguments.optional(GenericArguments.string(Text.of(COMMAND_ARG_LEVEL))))
                 .child(enchantAllCommandSpec, "all")
                 .executor(this::commandEnchant).build();
-        this.game.getCommandManager().register(this, enchantCommandSpec, "enchant");
+        this.game.getCommandManager().register(this, enchantCommandSpec, "enchant", "tim");
         this.logger.info("There are some who call me... Tim?");
     }
 
     private CommandResult commandEnchant(CommandSource commandSource, CommandContext commandContext) throws CommandException {
-        Enchantment enchantment = commandContext.<Enchantment>getOne(COMMAND_ARG_ENCHANTMENT).get();
+        EnchantmentType enchantment = commandContext.<EnchantmentType>getOne(COMMAND_ARG_ENCHANTMENT).get();
         int level = this.getEnchantmentLevel(commandContext);
         this.enchant(this.getPlayer(commandSource), enchantment, getLevelForEnchantment(enchantment, level));
         return this.getSuccess(commandSource);
@@ -125,8 +107,8 @@ public class Tim {
     private CommandResult commandEnchantAll(CommandSource commandSource, CommandContext commandContext) throws CommandException {
         Player player = this.getPlayer(commandSource);
         int level = this.getEnchantmentLevel(commandContext);
-        for (Enchantment enchantment : this.enchantments.values()) {
-            this.enchant(player, enchantment, getLevelForEnchantment(enchantment, level));
+        for (EnchantmentType type : this.game.getRegistry().getAllOf(EnchantmentType.class)) {
+            this.enchant(player, type, getLevelForEnchantment(type, level));
         }
         return this.getSuccess(commandSource);
     }
@@ -151,8 +133,8 @@ public class Tim {
         }
     }
 
-    private int getLevelForEnchantment(Enchantment enchantment, int level) {
-        return level > 0 ? level : enchantment.getMaximumLevel();
+    private int getLevelForEnchantment(EnchantmentType type, int level) {
+        return level > 0 ? level : type.getMaximumLevel();
     }
 
     private Player getPlayer(CommandSource commandSource) throws CommandException {
@@ -162,14 +144,14 @@ public class Tim {
         throw new CommandException(this.getErrorText("Only a player can enchant."));
     }
 
-    private void enchant(Player player, Enchantment enchantment, int level) throws CommandException {
+    private void enchant(Player player, EnchantmentType type, int level) throws CommandException {
         ItemStack item = player.getItemInHand(HandTypes.MAIN_HAND).orElseThrow(() -> new CommandException(this.getErrorText("You need to be holding an item to enchant it!")));
         item.transform(Keys.ITEM_ENCHANTMENTS, list -> {
-            List<ItemEnchantment> newList = new LinkedList<>();
+            List<Enchantment> newList = new LinkedList<>();
             if (list != null) {
-                list.stream().filter(ench -> ench.getEnchantment() != enchantment).forEach(newList::add);
+                list.stream().filter(enchantment -> enchantment.getType() != type).forEach(newList::add);
             }
-            newList.add(new ItemEnchantment(enchantment, level));
+            newList.add(Enchantment.of(type, level));
             return newList;
         });
         player.setItemInHand(HandTypes.MAIN_HAND, item);
