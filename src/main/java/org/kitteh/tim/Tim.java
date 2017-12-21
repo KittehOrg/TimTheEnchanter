@@ -54,7 +54,6 @@ import java.util.List;
  */
 @Plugin(id = "tim", name = "Tim the Enchanter", version = "4.1.0-for-7.0")
 public final class Tim {
-
     public static final String COMMAND_ARG_ENCHANTMENT = "enchantment";
     public static final String COMMAND_ARG_LEVEL = "level";
 
